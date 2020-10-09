@@ -1,6 +1,6 @@
 Chạy chương trình 
 
-        python moire.py /link_config_file
+        python moire.py /path_config_file
         
         
         
