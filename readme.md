@@ -6,6 +6,6 @@ Chạy chương trình
         
 config_file 
 
-[path_to folder test]
+[path_to_folder_test]
 
-[path_to file text chứa tên ảnh moire]
+[path_to_file_text ---chứa tên ảnh moire]
