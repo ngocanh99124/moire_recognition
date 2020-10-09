@@ -42,108 +42,64 @@ def moire_image(I, debug=1):
     # print(magI)
     magII = cv2.normalize(magI, None, 0, 1, cv2.NORM_MINMAX)  # Transform the matrix with float values into a
 
-    #if debug == 1:
-    #    cv2.imshow("fourier", magII)
+    if debug == 1:
+        cv2.imshow("fourier", magII)
 
     return magI
 
-def m_0(t, p):
-    res = 0.
-    res1 = 0.
-    for i in range(0, t+1, 1):
-        if i in p:
-            res += i*p[i]
-            res1 = res1 + p[i]
-    res = res/res1
-    return res
-def m_1(t, p):
-    res = 0.
-    res1 = 0.
-    for i in range(t+1, 255, 1):
-        if i in p:
-            res = res + i * p[i]
-            res1 = res1 + p[i]
-    res = res / res1
-    return res
-def e_AB(t, p):
-    res = 0.
-    for i in range(0, t-1, 1):
-        if i in p:
-            res = res + i * p[i]
 
-    res1 = res * m_0(t, p)
-    res = 0.
-    for i in range(t+1, 255, 1):
-        if i in p:
-            res = res + i * p[i]
-    res1 += res *m_1(t, p)
-    return res1
-
-def e_A(p):
-    res = 0.
-    for i in range(0, 255, 1):
-        if i in p:
-            res = res + i * p[i]
-    return res
-
-def e_B(t, p):
-    res = 0.
-    for i in range(0, t, 1):
-        if i in p:
-            res = res + p[i]
-    res1 = res*m_0(t, p)
-    res = 0.
-    for i in range(t+1, 255,1):
-        if i in p:
-            res = res + p[i]
-    res1 += res * m_1(t, p)
-    return res1
-
-def e_BB(t, p):
-    res = 0.
-    for i in range(0, t, 1):
-        if i in p:
-            res = res + p[i]
-    M0 = m_0(t, p)
-    M1 = m_1(t, p)
-    res1 = res * M0*M0
-    res = 0.
-    for i in range(t+1, 255, 1):
-        if i in p:
-            res = res + p[i]
-    res1+=res*M1*M1
-    return res1
 
 def calc(img):
-    p = {}
+    p = []
+    for i in range(0, 256, 1):
+        p.append(0.)
     rows, cols = img.shape
-    for i in range(0, rows-1, 1):
-        for j in range(0, cols-1, 1):
-            if img[i][j] in p:
-                p[img[i][j]]+=1
-            else:
-                p[img[i][j]]=1
+    for i in range(0, rows, 1):
+        for j in range(0, cols, 1):
+            p[img[i][j]]+=1.
+    t_0 = 0.
+    t_1 = 0.
+    p_0 = 0.
+    p_1 = 0.
+    rows = rows*1.
+    cols = cols*1.
     for i in range(0, 255, 1):
-        if i in p:
-            p[i] = p[i]/(rows*cols)
-    #print(p)
+        if p[i] == 0:
+            continue
+        p[i] = p[i] *1.
+        p[i] = p[i]/(rows*cols)
+        p_0 = p_0 + p[i]
+        p_1 = p_1 + i * p[i]
     avg = -100000
     remember = 0
-    for t in range(0, 255, 1):
-        if t in p:
-            try:
-                eB = e_B(t, p)
-                p_AB1= e_AB(t, p)-e_A(p)*e_B(t, p)
-                p_AB2= (e_BB(t, p)-eB*eB)
-                #print(p_AB1*p_AB1, p_AB2,t)
-                p_AB = p_AB1*p_AB1/p_AB2
-                if p_AB > avg:
-                    avg = p_AB
-                    remember = t
-                    #print(p_AB, t)
-            except:
-                #print("math err")
-                a = 0
+    for i in range(0, 256, 1):
+        # if p[i] == 0:
+        #     continue
+        # print(i, p_0, p_1, p[i], p_0-p[i])
+        p_0 = p_0 - p[i]
+        p_1 -= p[i]*i
+        t_0 += p[i]
+        t_1 += p[i]*i
+        if p_0 == 0:
+            continue
+        m1 = p_1 / p_0
+        if t_0 == 0:
+            continue
+        m0 = t_1 / t_0
+        eA = t_1 + p_1
+        eB = m0*t_0 + m1*p_0
+        eAB = m0*t_1 + m1*p_1
+        eBB = m0*m0*t_0 + m1*m1*p_0
+        p_AB1 = eAB-eA*eB
+        p_AB2 = eBB-eB*eB
+        if p_AB2 == 0:
+            remember = i
+            break
+        p_AB = p_AB1*p_AB1/p_AB2
+        if p_AB > avg:
+            remember = i
+            avg = p_AB
+            # print(t, p_AB, p_AB1, p_AB2)
 
     return remember
 
@@ -182,13 +138,15 @@ def show_thres(img, thres, sigma, debug=1):
 def is_spoofing(I):
     delta = 0.2
     sigma0 = 0.1
-    sigmaMax = 0.5
+    sigmaMax = 0.3
     k = 3
+
+
     while (True):
         if sigma0 > sigmaMax:
             return False
             break
-        # a = moire_image(I, 1)
+
         a = get_filted(I, k, sigma0)
         t = calc(a)
         #print(t)
@@ -232,7 +190,13 @@ for f in file_images:
                 if is_spoofing(img1):
                     output.write(f)
                     output.write("\n")
-
+                else:
+                    x = random.randrange(0, rows - 200, 1)
+                    y = random.randrange(0, cols - 200, 1)
+                    img1 = img[x:x + 199, y:y + 199]
+                    if is_spoofing(img1):
+                        output.write(f)
+                        output.write("\n")
         else:
             if is_spoofing(img):
                 output.write(f)
