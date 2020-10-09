@@ -163,7 +163,7 @@ def get_filted(img, k, sigma):
     result = cv2.normalize(result, result, 0, 1, cv2.NORM_MINMAX)
     #print("result", result)
     result = np.uint8(result*255.)
-    cv2.imwrite("result/log"+str(sigma)+".jpg", result)
+    #cv2.imwrite("result/log"+str(sigma)+".jpg", result)
     return result
 
 def show_thres(img, thres, sigma, debug=1):
@@ -176,8 +176,8 @@ def show_thres(img, thres, sigma, debug=1):
             else:
                 img[i][j] = 0
 
-    if debug == 1:
-        cv2.imwrite("result/thes"+str(sigma)+".jpg",img)
+    #if debug == 1:
+    #    cv2.imwrite("result/thes"+str(sigma)+".jpg",img)
 
 def is_spoofing(I):
     delta = 0.2
