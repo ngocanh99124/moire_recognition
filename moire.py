@@ -177,14 +177,14 @@ for f in file_images:
             if is_spoofing(img1):
                 output.write(f)
                 output.write("\n")
-            else:
+            elif rows>300 and cols > 300:
                 x = random.randrange(0, rows - 300, 1)
                 y = random.randrange(0, cols - 300, 1)
                 img1 = img[x:x + 299, y:y + 299]
                 if is_spoofing(img1):
                     output.write(f)
                     output.write("\n")
-                else:
+                elif rows>400 and cols > 400:
                     x = random.randrange(0, rows - 400, 1)
                     y = random.randrange(0, cols - 400, 1)
                     img1 = img[x:x + 399, y:y + 399]
