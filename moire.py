@@ -42,8 +42,8 @@ def moire_image(I, debug=1):
     # print(magI)
     magII = cv2.normalize(magI, None, 0, 1, cv2.NORM_MINMAX)  # Transform the matrix with float values into a
 
-    if debug == 1:
-        cv2.imshow("fourier", magII)
+    #if debug == 1:
+    #    cv2.imshow("fourier", magII)
 
     return magI
 
