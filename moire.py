@@ -73,9 +73,6 @@ def calc(img):
     avg = -100000
     remember = 0
     for i in range(0, 256, 1):
-        # if p[i] == 0:
-        #     continue
-        # print(i, p_0, p_1, p[i], p_0-p[i])
         p_0 = p_0 - p[i]
         p_1 -= p[i]*i
         t_0 += p[i]
@@ -140,13 +137,10 @@ def is_spoofing(I):
     sigma0 = 0.1
     sigmaMax = 0.3
     k = 3
-
-
     while (True):
         if sigma0 > sigmaMax:
             return False
             break
-
         a = get_filted(I, k, sigma0)
         t = calc(a)
         #print(t)
@@ -184,16 +178,16 @@ for f in file_images:
                 output.write(f)
                 output.write("\n")
             else:
-                x = random.randrange(0, rows - 200, 1)
-                y = random.randrange(0, cols - 200, 1)
-                img1 = img[x:x + 199, y:y + 199]
+                x = random.randrange(0, rows - 300, 1)
+                y = random.randrange(0, cols - 300, 1)
+                img1 = img[x:x + 299, y:y + 299]
                 if is_spoofing(img1):
                     output.write(f)
                     output.write("\n")
                 else:
-                    x = random.randrange(0, rows - 200, 1)
-                    y = random.randrange(0, cols - 200, 1)
-                    img1 = img[x:x + 199, y:y + 199]
+                    x = random.randrange(0, rows - 400, 1)
+                    y = random.randrange(0, cols - 400, 1)
+                    img1 = img[x:x + 399, y:y + 399]
                     if is_spoofing(img1):
                         output.write(f)
                         output.write("\n")
