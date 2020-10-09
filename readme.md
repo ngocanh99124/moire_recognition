@@ -1,11 +1,11 @@
 Chạy chương trình 
 
-        python moire.py /path_config_file
+        python moire.py /path_to_config_file
         
         
         
 config_file 
 
-[link folder test]
+[path_to folder test]
 
-[link file text chứa tên ảnh moire]
+[path_to file text chứa tên ảnh moire]
