@@ -96,7 +96,6 @@ def calc(img):
         if p_AB > avg:
             remember = i
             avg = p_AB
-            # print(t, p_AB, p_AB1, p_AB2)
 
     return remember
 
@@ -114,9 +113,7 @@ def get_filted(img, k, sigma):
     filter_img = filted*window('hann', img.shape)
     result = fftshift(np.abs(fftn(filter_img)))
     result = cv2.normalize(result, result, 0, 1, cv2.NORM_MINMAX)
-    #print("result", result)
     result = np.uint8(result*255.)
-    #cv2.imwrite("result/log"+str(sigma)+".jpg", result)
     return result
 
 def show_thres(img, thres, sigma, debug=1):
@@ -143,9 +140,7 @@ def is_spoofing(I):
             break
         a = get_filted(I, k, sigma0)
         t = calc(a)
-        #print(t)
         thres = calc_peak(a, t)
-        show_thres(a, t, sigma0, 1)
         if thres < 0.001:
             #print(thres, t)
             return True
