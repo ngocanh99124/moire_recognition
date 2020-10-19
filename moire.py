@@ -170,9 +170,9 @@ for f in tqdm(file_images):
             if is_spoofing(sigmaMax, k, img1):
                 output.write(f)
                 output.write("\n")
-            elif rows>300 and cols > 300:
-                x = random.randrange(0, rows - 300, 1)
-                y = random.randrange(0, cols - 300, 1)
+            elif rows>500 and cols > 500:
+                x = random.randrange(rows-500, rows - 200, 1)
+                y = random.randrange(cols-500, cols - 200, 1)
                 img1 = img[x:x + 299, y:y + 299]
                 if is_spoofing(sigmaMax, k, img1):
                     output.write(f)
