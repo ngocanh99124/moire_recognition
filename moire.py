@@ -4,6 +4,7 @@ from skimage.filters import difference_of_gaussians, window
 from scipy.fftpack import fftn, fftshift
 import argparse
 import random, os
+from tqdm import tqdm
 
 def moire_image(I, debug=1):
     rows, cols = I.shape
@@ -73,7 +74,7 @@ def calc(img):
     avg = -100000
     remember = 0
     for i in range(0, 256, 1):
-        p_0 = p_0 - p[i]
+        p_0 -= p[i]
         p_1 -= p[i]*i
         t_0 += p[i]
         t_1 += p[i]*i
@@ -96,7 +97,6 @@ def calc(img):
         if p_AB > avg:
             remember = i
             avg = p_AB
-
     return remember
 
 def calc_peak(img, peaks):
@@ -126,14 +126,9 @@ def show_thres(img, thres, sigma, debug=1):
             else:
                 img[i][j] = 0
 
-    #if debug == 1:
-    #    cv2.imwrite("result/thes"+str(sigma)+".jpg",img)
-
-def is_spoofing(I):
+def is_spoofing( sigmaMax, k, I):
     delta = 0.2
     sigma0 = 0.1
-    sigmaMax = 0.5
-    k = 3
     while (True):
         if sigma0 > sigmaMax:
             return False
@@ -141,7 +136,7 @@ def is_spoofing(I):
         a = get_filted(I, k, sigma0)
         t = calc(a)
         thres = calc_peak(a, t)
-        if thres < 0.0008:
+        if thres < 0.001:
             #print(thres, t)
             return True
             break
@@ -153,12 +148,15 @@ args = parser.parse_args()
 config_folder = args.config_folder
 folders = open(config_folder, "r")
 data = folders.read().split("\n")
+print(data)
 folder_int = data[0]
 folder_out = data[1]
+sigmaMax = (float)(data[2])
+k = (float)(data[3])
 output = open(folder_out, "w+")
 print(folder_int)
 file_images = os.listdir(folder_int)
-for f in file_images:
+for f in tqdm(file_images):
     link_image = os.path.join(folder_int, f)
     img = cv2.imread(link_image, 0)
     if img is None:
@@ -169,21 +167,21 @@ for f in file_images:
             x = random.randrange(0, rows-200, 1)
             y = random.randrange(0, cols-200, 1)
             img1 = img[x:x+199, y:y+199]
-            if is_spoofing(img1):
+            if is_spoofing(sigmaMax, k, img1):
                 output.write(f)
                 output.write("\n")
-            elif rows>250 and cols > 250:
-                x = random.randrange(0, rows - 250, 1)
-                y = random.randrange(0, cols - 250, 1)
-                img1 = img[x:x + 249, y:y + 249]
-                if is_spoofing(img1):
+            elif rows>300 and cols > 300:
+                x = random.randrange(0, rows - 300, 1)
+                y = random.randrange(0, cols - 300, 1)
+                img1 = img[x:x + 299, y:y + 299]
+                if is_spoofing(sigmaMax, k, img1):
                     output.write(f)
                     output.write("\n")
-                elif rows>400 and cols > 400:
-                    x = random.randrange(0, rows - 400, 1)
-                    y = random.randrange(0, cols - 400, 1)
-                    img1 = img[x:x + 399, y:y + 399]
-                    if is_spoofing(img1):
+                elif rows>350 and cols > 350:
+                    x = random.randrange(0, rows - 350, 1)
+                    y = random.randrange(0, cols - 350, 1)
+                    img1 = img[x:x + 349, y:y + 349]
+                    if is_spoofing(sigmaMax, k, img1):
                         output.write(f)
                         output.write("\n")
         else:
