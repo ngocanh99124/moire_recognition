@@ -172,10 +172,10 @@ for f in file_images:
             if is_spoofing(img1):
                 output.write(f)
                 output.write("\n")
-            elif rows>300 and cols > 300:
-                x = random.randrange(0, rows - 300, 1)
-                y = random.randrange(0, cols - 300, 1)
-                img1 = img[x:x + 299, y:y + 299]
+            elif rows>250 and cols > 250:
+                x = random.randrange(0, rows - 250, 1)
+                y = random.randrange(0, cols - 250, 1)
+                img1 = img[x:x + 249, y:y + 249]
                 if is_spoofing(img1):
                     output.write(f)
                     output.write("\n")
