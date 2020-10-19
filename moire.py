@@ -132,7 +132,7 @@ def show_thres(img, thres, sigma, debug=1):
 def is_spoofing(I):
     delta = 0.2
     sigma0 = 0.1
-    sigmaMax = 0.3
+    sigmaMax = 0.5
     k = 3
     while (True):
         if sigma0 > sigmaMax:
@@ -141,7 +141,7 @@ def is_spoofing(I):
         a = get_filted(I, k, sigma0)
         t = calc(a)
         thres = calc_peak(a, t)
-        if thres < 0.001:
+        if thres < 0.0008:
             #print(thres, t)
             return True
             break
