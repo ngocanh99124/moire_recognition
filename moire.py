@@ -53,70 +53,6 @@ def moire_image(I, debug=1):
 
 
 
-def calc(img):
-    p = []
-    for i in range(0, 256, 1):
-        p.append(0.)
-    rows, cols = img.shape
-    for i in range(0, rows, 1):
-        for j in range(0, cols, 1):
-            p[img[i][j]]+=1.
-    t_0 = 0.
-    t_1 = 0.
-    p_0 = 0.
-    p_1 = 0.
-    rows = rows*1.
-    cols = cols*1.
-    for i in range(0, 255, 1):
-        if p[i] == 0:
-            continue
-        p[i] = p[i] *1.
-        p[i] = p[i]/(rows*cols)
-        p_0 = p_0 + p[i]
-        p_1 = p_1 + i * p[i]
-    avg = -100000
-    remember = 0
-    for i in range(0, 256, 1):
-        p_0 -= p[i]
-        p_1 -= p[i]*i
-        t_0 += p[i]
-        t_1 += p[i]*i
-        if p_0 == 0:
-            continue
-        m1 = p_1 / p_0
-        if t_0 == 0:
-            continue
-        m0 = t_1 / t_0
-        eA = t_1 + p_1
-        eB = m0*t_0 + m1*p_0
-        eAB = m0*t_1 + m1*p_1
-        eBB = m0*m0*t_0 + m1*m1*p_0
-        p_AB1 = eAB-eA*eB
-        p_AB2 = eBB-eB*eB
-        if p_AB2 == 0:
-            remember = i
-            break
-        p_AB = p_AB1*p_AB1/p_AB2
-        if p_AB > avg:
-            remember = i
-            avg = p_AB
-    peaks = remember
-    rows, cols = img.shape
-    res = 0
-    for i in range(0, rows - 1, 1):
-        for j in range(0, cols - 1, 1):
-            if img[i][j] > peaks:
-                res += 1
-    return res / (rows * cols)
-
-def calc_peak(img, peaks):
-    rows, cols = img.shape
-    res = 0
-    for i in range(0, rows - 1, 1):
-        for j in range(0, cols - 1, 1):
-            if img[i][j] > peaks:
-                res += 1
-    return res/(rows*cols)
 
 def get_filted(img, k, sigma):
     filted = difference_of_gaussians(img, sigma, k*sigma)
@@ -126,21 +62,7 @@ def get_filted(img, k, sigma):
     result = np.uint8(result*255.)
     return result
 
-# def is_spoofing( sigmaMax, k, I):
-#     delta = 0.2
-#     sigma0 = 0.1
-#     while (True):
-#         if sigma0 > sigmaMax:
-#             return False
-#             break
-#         a = get_filted(I, k, sigma0)
-#         t = calc(a)
-#         thres = calc_peak(a, t)
-#         if thres < 0.002:
-#             #print(thres, t)
-#             return True
-#             break
-#         sigma0 += delta
+
 
 platform = cl.get_platforms()
 my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
