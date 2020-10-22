@@ -5,6 +5,9 @@ from scipy.fftpack import fftn, fftshift
 import argparse
 import random, os
 from tqdm import tqdm
+import pyopencl as cl
+import pyopencl.array as cla
+
 
 def moire_image(I, debug=1):
     rows, cols = I.shape
@@ -97,7 +100,14 @@ def calc(img):
         if p_AB > avg:
             remember = i
             avg = p_AB
-    return remember
+    peaks = remember
+    rows, cols = img.shape
+    res = 0
+    for i in range(0, rows - 1, 1):
+        for j in range(0, cols - 1, 1):
+            if img[i][j] > peaks:
+                res += 1
+    return res / (rows * cols)
 
 def calc_peak(img, peaks):
     rows, cols = img.shape
@@ -116,31 +126,91 @@ def get_filted(img, k, sigma):
     result = np.uint8(result*255.)
     return result
 
-def show_thres(img, thres, sigma, debug=1):
-    rows, cols = img.shape
-    img = np.zeros([rows, cols])
-    for i in range(0, rows, 1):
-        for j in range(0, cols, 1):
-            if img[i][j] > thres:
-                img[i][j] = 255
-            else:
-                img[i][j] = 0
+# def is_spoofing( sigmaMax, k, I):
+#     delta = 0.2
+#     sigma0 = 0.1
+#     while (True):
+#         if sigma0 > sigmaMax:
+#             return False
+#             break
+#         a = get_filted(I, k, sigma0)
+#         t = calc(a)
+#         thres = calc_peak(a, t)
+#         if thres < 0.002:
+#             #print(thres, t)
+#             return True
+#             break
+#         sigma0 += delta
 
-def is_spoofing( sigmaMax, k, I):
-    delta = 0.2
-    sigma0 = 0.1
-    while (True):
-        if sigma0 > sigmaMax:
-            return False
-            break
-        a = get_filted(I, k, sigma0)
-        t = calc(a)
-        thres = calc_peak(a, t)
-        if thres < 0.001:
-            #print(thres, t)
-            return True
-            break
-        sigma0 += delta
+platform = cl.get_platforms()
+my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+ctx = cl.Context(devices=my_gpu_devices)
+queue = cl.CommandQueue(ctx)
+
+mf = cl.mem_flags
+
+prg = cl.Program(ctx, """
+__kernel void check(int row, int col,
+    __global const int *img, __global  float * thres)
+{
+    float p[256];
+    // int row = get_global_id(0) col = get_global_id(1);
+  
+    for (int i = 0; i <= 255; i++) p[i] = 0;
+    for (int i = 0; i < row; i++)
+        for (int j = 0; j < col; j++)
+            p[*(img+i*col+j)]+=1;
+    float t_0 = 0, t_1 = 0, p_0 = 0, p_1 = 0, m1, m0, eA, eB, eAB, eBB, pAB1, pAB2, pAB;
+    for (int i = 0; i <= 255; i++)
+    {
+        if (p[i] == 0)
+            continue;
+        p[i] = p[i]/(row*col);
+        p_0 = p_0 + p[i];
+        p_1 = p_1 + i * p[i];
+    }
+    float avg = -10000;
+    int remember = 0;
+    for (int i = 0; i <= 255; i++)
+    {
+        p_0 -= p[i];
+        p_1 -= p[i]*i;
+        t_0 += p[i];
+        t_1 += p[i]*i;
+        if (p_0 == 0)
+            continue;
+        m1 = p_1/p_0;
+        if (t_0 == 0)
+            continue;
+        m0 = t_1/t_0;
+        eA = t_1 + p_1;
+        eB = m0*t_0 + m1*p_0;
+        eAB = m0*t_1 + m1*p_1;
+        eBB = m0*m0*t_0 + m1*m1*p_0;
+        pAB1 = eAB-eA*eB;
+        pAB2 = eBB-eB*eB;
+        if (pAB2 == 0)
+        {
+            remember = i;
+            break;
+        }
+        pAB = pAB1*pAB1/pAB2;
+        if (pAB > avg)
+        {
+            remember = i;
+            avg = pAB;
+        }
+    }
+    float res = 0; int peaks = remember;
+    for (int i = 0; i < row; i++)
+        for (int j = 0; j < col; j++)
+        if (*(img+i*col+j) > peaks)
+            res+=1;
+    float a = row;
+    *thres = res/(a*col);
+
+}
+""").build()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config_folder", help="The input image file.")
@@ -162,29 +232,35 @@ for f in tqdm(file_images):
     if img is None:
         print("can't read image")
     else:
+        img = get_filted(img, k, sigmaMax)
+        dd = 0
+        dem = 0
         rows, cols = img.shape
-        if rows>200 and cols > 200:
-            x = random.randrange(0, rows-200, 1)
-            y = random.randrange(0, cols-200, 1)
-            img1 = img[x:x+199, y:y+199]
-            if is_spoofing(sigmaMax, k, img1):
-                output.write(f)
-                output.write("\n")
-            elif rows>500 and cols > 500:
-                x = random.randrange(rows-500, rows - 200, 1)
-                y = random.randrange(cols-500, cols - 200, 1)
-                img1 = img[x:x + 299, y:y + 299]
-                if is_spoofing(sigmaMax, k, img1):
+        queue_ = []
+        queue_g = []
+        for row in range(0, rows, 400):
+            if dd == 1:
+                break
+            for col in range(0, cols, 400):
+                row1 = min(row+400, rows-1)
+                col1 = min(col+400, cols-1)
+                np_img = np.array(img[row:row1, col:col1], dtype = np.int32)
+                res = np.float32(0.)
+
+                a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,hostbuf=np_img)
+                res_g = cl.Buffer(ctx, mf.WRITE_ONLY, res.nbytes)
+                r, c = np_img.shape
+                we = prg.check(queue,np_img.shape, None, np.int32(r), np.int32(c), a_g, res_g)
+                res_np = np.empty_like(res)
+                queue_.append(res_np)
+                cl.enqueue_copy(queue, queue_[dem], res_g)
+                dem+=1
+                print(res_np, f)
+                if res_np < 0.0019:
                     output.write(f)
                     output.write("\n")
-                elif rows>350 and cols > 350:
-                    x = random.randrange(0, rows - 350, 1)
-                    y = random.randrange(0, cols - 350, 1)
-                    img1 = img[x:x + 349, y:y + 349]
-                    if is_spoofing(sigmaMax, k, img1):
-                        output.write(f)
-                        output.write("\n")
-        else:
-            if is_spoofing(img):
-                output.write(f)
-                output.write("\n")
+                    dd = 1
+                    break
+
+
+
