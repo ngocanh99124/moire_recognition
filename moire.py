@@ -53,7 +53,6 @@ def moire_image(I, debug=1):
 
 
 
-
 def get_filted(img, k, sigma):
     filted = difference_of_gaussians(img, sigma, k*sigma)
     filter_img = filted*window('hann', img.shape)
@@ -177,7 +176,6 @@ for f in tqdm(file_images):
                 queue_.append(res_np)
                 cl.enqueue_copy(queue, queue_[dem], res_g)
                 dem+=1
-                print(res_np, f)
                 if res_np < 0.0019:
                     output.write(f)
                     output.write("\n")
