@@ -139,9 +139,9 @@ data = folders.read().split("\n")
 print(data)
 folder_int = data[0]
 folder_out = data[1]
-sigma_ = (float)(data[2])
-sigmaMax = (float)(data[3])
-k = (float)(data[4])
+sigma_ = 0.1
+sigmaMax = (float)(data[2])
+k = (float)(data[3])
 output = open(folder_out, "w+")
 print(folder_int)
 file_images = os.listdir(folder_int)
