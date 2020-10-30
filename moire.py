@@ -181,7 +181,7 @@ for f in tqdm(file_images):
             res_np = np.empty_like(thres)
             cl.enqueue_copy(queue, res_np, thres_g, wait_for=[we])
             thres = check(res_np, shape_)
-            if (thres < 0.0025):
+            if (thres < 0.005):
                 dem += 1
                 output.write(f + " " + str(thres) + "\n")
                 break
