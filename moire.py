@@ -159,6 +159,7 @@ for f in tqdm(file_images):
         print("can't read image")
     else:
         sigma = sigma_
+        min_thres = 1
         while (sigma <= sigmaMax+0.1):
             thres = np.zeros(256, dtype=np.int32)
             thres_g = cl.Buffer(ctx, mf.WRITE_ONLY, thres.nbytes)
@@ -181,11 +182,14 @@ for f in tqdm(file_images):
             res_np = np.empty_like(thres)
             cl.enqueue_copy(queue, res_np, thres_g, wait_for=[we])
             thres = check(res_np, shape_)
+            if min_thres > thres:
+                min_thres = thres
             if (thres < 0.01):
                 dem += 1
                 output.write(f + " " + str(thres) + "\n")
                 break
             sigma += delta
+            output.write(f + " " + str(min_thres) + "\n")
 
 print(dem)
 output.write(str(dem*100 / len(file_images)))
