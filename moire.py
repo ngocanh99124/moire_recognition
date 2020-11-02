@@ -184,7 +184,7 @@ for f in tqdm(file_images):
             thres = check(res_np, shape_)
             if min_thres > thres:
                 min_thres = thres
-            if (thres < 0.01):
+            if (thres < 0.09):
                 dem += 1
                 output.write(f + " " + str(thres) + "\n")
                 break
