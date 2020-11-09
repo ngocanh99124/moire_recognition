@@ -130,6 +130,28 @@ prg = cl.Program(ctx, """
         }
         """).build()
 
+def is_moire(img, sigma):
+    thres = np.zeros(256, dtype=np.int32)
+    thres_g = cl.Buffer(ctx, mf.WRITE_ONLY, thres.nbytes)
+    img = get_filted(img, k, sigma)
+    np_ar = np.array(img, dtype=np.int32)
+    r, c = np_ar.shape
+    shape_ = r * c
+    np_ar = np.reshape(np_ar, r * c)
+    # print("shape", shape_)
+    # while shape_%size != 0:
+    #     np_ar = np.append(np_ar, [-1])
+    #     shape_+=1
+    np_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                     hostbuf=np_ar)
+
+    we = prg.check(queue, (1,), None, np_g, thres_g, np.int32(shape_))
+    res_np = np.empty_like(thres)
+    cl.enqueue_copy(queue, res_np, thres_g, wait_for=[we])
+    thres = check(res_np, shape_)
+
+    return thres
+
 parser = argparse.ArgumentParser()
 parser.add_argument("config_folder", help="The input image file.")
 args = parser.parse_args()
@@ -160,36 +182,32 @@ for f in tqdm(file_images):
     else:
         sigma = sigma_
         min_thres = 1
+        dd_img = False
         while (sigma <= sigmaMax+0.1):
-            thres = np.zeros(256, dtype=np.int32)
-            thres_g = cl.Buffer(ctx, mf.WRITE_ONLY, thres.nbytes)
-            dd = 0
-            np_ar = []
-            img = get_filted(img, k, sigma)
             rows, cols = img.shape
-            np_ar = np.array(img, dtype=np.int32)
-            r, c = np_ar.shape
-            shape_ = r * c
-            np_ar = np.reshape(np_ar, r * c)
-            # print("shape", shape_)
-            # while shape_%size != 0:
-            #     np_ar = np.append(np_ar, [-1])
-            #     shape_+=1
-            np_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
-                             hostbuf=np_ar)
-
-            we = prg.check(queue, (1,), None, np_g, thres_g, np.int32(shape_))
-            res_np = np.empty_like(thres)
-            cl.enqueue_copy(queue, res_np, thres_g, wait_for=[we])
-            thres = check(res_np, shape_)
-            if min_thres > thres:
-                min_thres = thres
-            if (thres < 0.09):
-                dem += 1
-                output.write(f + " " + str(thres) + "\n")
+            slide_r = rows//4
+            slide_c = cols//4
+            if dd_img:
                 break
+            min_thres = 1
+            for i in range(0, 2, 1):
+                if not(dd_img):
+                    for j in range(0, 2, 1):
+                        r = slide_r * i
+                        rr = slide_r * (i + 2)
+                        c = slide_c * j
+                        cc = slide_c * (j + 2)
+                        thres = is_moire(img[r:rr, c:cc], sigma)
+                        if min_thres > thres:
+                            min_thres = thres
+                        if (thres < 0.001):
+                            dem += 1
+                            output.write(f + " " + str(thres) + "\n")
+                            dd_img = True
+                            break
+            if not(dd_img):
+                a=1
             sigma += delta
-            output.write(f + " " + str(min_thres) + "\n")
 
 print(dem)
 output.write(str(dem*100 / len(file_images)))
