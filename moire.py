@@ -185,28 +185,28 @@ for f in tqdm(file_images):
         dd_img = False
         while (sigma <= sigmaMax+0.1):
             rows, cols = img.shape
-            slide_r = rows//4
-            slide_c = cols//4
+            slide_r = rows//6
+            slide_c = cols//6
             if dd_img:
                 break
             min_thres = 1
-            for i in range(0, 2, 1):
+            for i in range(0, 3, 1):
                 if not(dd_img):
-                    for j in range(0, 2, 1):
+                    for j in range(0, 3, 1):
                         r = slide_r * i
-                        rr = slide_r * (i + 2)
+                        rr = slide_r * (i + 3)
                         c = slide_c * j
-                        cc = slide_c * (j + 2)
+                        cc = slide_c * (j + 3)
                         thres = is_moire(img[r:rr, c:cc], sigma)
                         if min_thres > thres:
                             min_thres = thres
                         if (thres < 0.001):
                             dem += 1
-                            output.write(f + " " + str(thres) + "\n")
+                            output.write(f + " " + str(thres) + " "+str(img.shape)+"\n")
                             dd_img = True
                             break
             if not(dd_img):
-                a=1
+                output.write(f + " " + str(min_thres) + " " + str(img.shape) + "\n")
             sigma += delta
 
 print(dem)
