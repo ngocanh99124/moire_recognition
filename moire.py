@@ -183,31 +183,48 @@ for f in tqdm(file_images):
         sigma = sigma_
         min_thres = 1
         dd_img = False
-        while (sigma <= sigmaMax+0.1):
-            rows, cols = img.shape
-            slide_r = rows//6
-            slide_c = cols//6
+        rows, cols = img.shape
+        size_r = rows//100
+        size_c = cols//100
+        if dd_img:
+            break
+        if size_r < 3 or size_c < 3:
+            if not (dd_img):
+                thres = is_moire(img, sigma)
+                if min_thres > thres:
+                    min_thres = thres
+                if (thres < 0.001):
+                    dem += 1
+                    output.write(
+                            f + " " + str(thres) + " " + str(img.shape) + "\n")
+                    dd_img = True
+                    break
+                sigma += delta
+                continue
+        slide_r = rows//size_r
+        slide_c = cols//size_c
+        print(img.shape, slide_r, slide_c)
+        for i in range(0, size_r - 3, 1):
             if dd_img:
                 break
-            min_thres = 1
-            for i in range(0, 3, 1):
-                if not(dd_img):
-                    for j in range(0, 3, 1):
-                        r = slide_r * i
-                        rr = slide_r * (i + 3)
-                        c = slide_c * j
-                        cc = slide_c * (j + 3)
-                        thres = is_moire(img[r:rr, c:cc], sigma)
-                        if min_thres > thres:
-                            min_thres = thres
-                        if (thres < 0.001):
-                            dem += 1
-                            output.write(f + " " + str(thres) + " "+str(img.shape)+"\n")
-                            dd_img = True
-                            break
-            if not(dd_img):
-                output.write(f + " " + str(min_thres) + " " + str(img.shape) + "\n")
-            sigma += delta
+            for j in range(0, size_c - 3, 1):
+                r = slide_r * i
+                rr = slide_r * (i + 2)
+                c = slide_c * j
+                cc = slide_c * (j + 2)
+                thres = is_moire(img[r:rr, c:cc], sigma)
+                if min_thres > thres:
+                    min_thres = thres
+                if (thres < 0.001):
+                    dem += 1
+                    output.write(
+                            f + " " + str(thres) + " " + str(img.shape) + "\n")
+                    dd_img = True
+                    break
+        if not (dd_img):
+            output.write(f + " " + str(min_thres) + " " + str(img.shape) + "\n")
+        sigma += delta
+
 
 print(dem)
 output.write(str(dem*100 / len(file_images)))
