@@ -184,43 +184,25 @@ for f in tqdm(file_images):
         min_thres = 1
         dd_img = False
         rows, cols = img.shape
-        size_r = rows//100
-        size_c = cols//100
-        if dd_img:
-            break
-        if size_r < 3 or size_c < 3:
-            if not (dd_img):
-                thres = is_moire(img, sigma)
-                if min_thres > thres:
-                    min_thres = thres
-                if (thres < 0.001):
-                    dem += 1
-                    output.write(
-                            f + " " + str(thres) + " " + str(img.shape) + "\n")
-                    dd_img = True
-                    break
-                sigma += delta
-                continue
-        slide_r = rows//size_r
-        slide_c = cols//size_c
-        print(img.shape, slide_r, slide_c)
-        for i in range(0, size_r - 3, 1):
-            if dd_img:
-                break
-            for j in range(0, size_c - 3, 1):
-                r = slide_r * i
-                rr = slide_r * (i + 2)
-                c = slide_c * j
-                cc = slide_c * (j + 2)
-                thres = is_moire(img[r:rr, c:cc], sigma)
-                if min_thres > thres:
-                    min_thres = thres
-                if (thres < 0.001):
-                    dem += 1
-                    output.write(
-                            f + " " + str(thres) + " " + str(img.shape) + "\n")
-                    dd_img = True
-                    break
+        slide_r = rows // 6
+        slide_c = cols // 6
+        for size_l in range(2, 4, 1):
+            for size_r in range(2, 4, 1):
+                for i in range(0, 6-size_l, 1):
+                    for j in range(0, 6-size_r, 1):
+                        r = slide_r * i
+                        rr = slide_r * (i + size_l)
+                        c = slide_c * j
+                        cc = slide_c * (j + size_r)
+                        thres = is_moire(img[r:rr, c:cc], sigma)
+                        if min_thres > thres:
+                            min_thres = thres
+                        if (thres < 0.001):
+                            dem += 1
+                            output.write(
+                                f + " " + str(thres) + " " + str(img.shape) + "\n")
+                            dd_img = True
+                            break
         if not (dd_img):
             output.write(f + " " + str(min_thres) + " " + str(img.shape) + "\n")
         sigma += delta
