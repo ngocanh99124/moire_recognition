@@ -187,8 +187,14 @@ for f in tqdm(file_images):
         slide_r = rows // 6
         slide_c = cols // 6
         for size_l in range(2, 4, 1):
+            if dd_img:
+                break
             for size_r in range(2, 4, 1):
+                if dd_img:
+                    break
                 for i in range(0, 6-size_l, 1):
+                    if dd_img:
+                        break
                     for j in range(0, 6-size_r, 1):
                         r = slide_r * i
                         rr = slide_r * (i + size_l)
