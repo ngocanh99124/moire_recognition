@@ -133,7 +133,6 @@ prg = cl.Program(ctx, """
 def is_moire(img, sigma):
     thres = np.zeros(256, dtype=np.int32)
     thres_g = cl.Buffer(ctx, mf.WRITE_ONLY, thres.nbytes)
-    img = get_filted(img, k, sigma)
     np_ar = np.array(img, dtype=np.int32)
     r, c = np_ar.shape
     shape_ = r * c
@@ -175,27 +174,29 @@ d2 = 0
 
 for f in tqdm(file_images):
     link_image = os.path.join(folder_int, f)
-    img = cv2.imread(link_image, 0)
+    img_ = cv2.imread(link_image, 0)
     print(link_image)
-    if img is None:
+    if img_ is None:
         print("can't read image")
     else:
         sigma = sigma_
         min_thres = 1
         dd_img = False
-        rows, cols = img.shape
-        slide_r = rows // 6
-        slide_c = cols // 6
-        for size_l in range(2, 4, 1):
+        rows, cols = img_.shape
+        slide_r = rows // 9
+        slide_c = cols // 9
+        img = get_filted(img_, k, sigma)
+
+        for size_l in range(4, 6, 1):
             if dd_img:
                 break
-            for size_r in range(2, 4, 1):
+            for size_r in range(4, 6, 1):
                 if dd_img:
                     break
-                for i in range(0, 6-size_l, 1):
+                for i in range(0, 9-size_l, 1):
                     if dd_img:
                         break
-                    for j in range(0, 6-size_r, 1):
+                    for j in range(0, 9-size_r, 1):
                         r = slide_r * i
                         rr = slide_r * (i + size_l)
                         c = slide_c * j
@@ -203,7 +204,7 @@ for f in tqdm(file_images):
                         thres = is_moire(img[r:rr, c:cc], sigma)
                         if min_thres > thres:
                             min_thres = thres
-                        if (thres < 0.001):
+                        if (thres < 0.002):
                             dem += 1
                             output.write(
                                 f + " " + str(thres) + " " + str(img.shape) + "\n")
